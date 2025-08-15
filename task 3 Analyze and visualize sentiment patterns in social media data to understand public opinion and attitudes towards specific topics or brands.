@@ -1,0 +1,93 @@
+# 1. Imports & Setup
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import re
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from wordcloud import WordCloud
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, accuracy_score
+
+# 2. NLTK Downloads
+nltk.download('stopwords')
+nltk.download('wordnet')
+
+# 3. Load Dataset
+from google.colab import files
+uploaded = files.upload() # Add file upload
+file_name = list(uploaded.keys())[0] # Get the uploaded file name
+
+df = pd.read_csv(file_name, header=None,
+                 names=['Tweet_ID', 'Topic', 'Sentiment', 'Tweet'])
+print(df.shape)
+print(df['Sentiment'].value_counts())
+
+# 4. Clean Data
+df.dropna(subset=['Tweet', 'Sentiment', 'Topic'], inplace=True)
+
+# 5. Text Preprocessing Function
+stop = set(stopwords.words('english'))
+lemmatizer = WordNetLemmatizer()
+def clean_text(text):
+    text = re.sub(r'@[\w_]+', '', text)       # remove mentions
+    text = re.sub(r'http\S+', '', text)        # remove URLs
+    text = re.sub(r'#', '', text)              # drop hashtag symbol
+    text = re.sub(r'[^A-Za-z\s]', '', text)    # remove special characters
+    tokens = [lemmatizer.lemmatize(w.lower()) for w in text.split() if w.lower() not in stop]
+    return ' '.join(tokens)
+
+df['clean_tweet'] = df['Tweet'].apply(clean_text)
+
+# 6. Visualizations
+## 6a. Overall Sentiment Distribution
+plt.figure(figsize=(6, 4))
+sns.countplot(x='Sentiment', data=df,
+              order=df['Sentiment'].value_counts().index)
+plt.title('Overall Sentiment Distribution')
+plt.xlabel('Sentiment')
+plt.ylabel('Count')
+plt.tight_layout()
+plt.show()
+
+## 6b. Sentiment by Topic
+plt.figure(figsize=(12, 6))
+sns.countplot(x='Topic', hue='Sentiment', data=df,
+              order=df['Topic'].value_counts().index)
+plt.title('Sentiment by Entity')
+plt.xlabel('Entity (Topic)')
+plt.ylabel('Tweet Count')
+plt.xticks(rotation=45, ha='right')
+plt.legend(title='Sentiment')
+plt.tight_layout()
+plt.show()
+
+## 6c. Word Clouds per Sentiment
+for sentiment in df['Sentiment'].unique():
+    text = ' '.join(df[df['Sentiment'] == sentiment]['clean_tweet'])
+    if not text:
+        continue
+    wc = WordCloud(width=800, height=400, background_color='white').generate(text)
+    plt.figure(figsize=(10, 5))
+    plt.imshow(wc, interpolation='bilinear')
+    plt.axis('off')
+    plt.title(f'Word Cloud: {sentiment}')
+    plt.show()
+
+# 7. Optional: Train a Sentiment Classifier
+vectorizer = TfidfVectorizer(max_features=5000)
+X = vectorizer.fit_transform(df['clean_tweet'])
+y = df['Sentiment']
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42)
+
+clf = LogisticRegression(max_iter=200)
+clf.fit(X_train, y_train)
+y_pred = clf.predict(X_test)
+
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print(classification_report(y_test, y_pred))
