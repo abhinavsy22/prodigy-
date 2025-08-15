@@ -1,0 +1,33 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Sample data manually created (you can replace this with the actual data from World Bank)
+data = {
+    'Country': ['India', 'China', 'USA', 'Indonesia', 'Pakistan'],
+    'Population': [1428627663, 1412000000, 339996563, 277534122, 240485658]
+}
+
+df = pd.DataFrame(data)
+
+# Create the bar chart
+plt.figure(figsize=(10, 6))
+plt.bar(df['Country'], df['Population'], color='skyblue')
+plt.title('Population Distribution by Country (2025)')
+plt.xlabel('Country')
+plt.ylabel('Population')
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.tight_layout()
+plt.show()
+# Simulated age data
+import numpy as np
+
+ages = np.random.normal(loc=35, scale=10, size=1000)
+
+plt.figure(figsize=(10,6))
+plt.hist(ages, bins=20, color='salmon', edgecolor='black')
+plt.title('Age Distribution')
+plt.xlabel('Age')
+plt.ylabel('Frequency')
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.tight_layout()
+plt.show()
